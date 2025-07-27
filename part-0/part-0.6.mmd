@@ -23,3 +23,14 @@ sequenceDiagram
     activate server
     server-->>browser: [{ "content": "Hello from TEJ", "date": "2025-07-27" }, ... ]
     deactivate server
+
+
+    browser->> server: POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa
+
+    Note right of browser: POST request to address new_note_spa with JSON data
+    
+    activate server
+    server-->> browser: message: note created (201 status code)
+
+    Note right of browser: Browser stays on the same page 
+    Note left of server: JavaScript code fetch the new note data from the server
