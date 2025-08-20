@@ -44,6 +44,7 @@ const App = () => {
         <Button onClick={handleButton} text="next anecdote" />
       </div>
       <Heading text="Anecdote with most votes" />
+      
       {Math.max(...votes) ? (
         <div>
           {anecdotes[maxVotesIndex()]} <p>has {Math.max(...votes)} votes</p>{" "}
