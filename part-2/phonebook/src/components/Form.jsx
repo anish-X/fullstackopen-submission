@@ -1,4 +1,5 @@
 import { useState } from "react";
+import service from "../services/service";
 
 const Form = ({ persons, setPersons }) => {
   const [newName, setNewName] = useState("");
@@ -7,10 +8,10 @@ const Form = ({ persons, setPersons }) => {
   const handleInput = (e) => {
     setNewName(e.target.value);
   };
-  
+
   const handleNumber = (e) => {
-    setNumber(e.target.value)
-  }
+    setNumber(e.target.value);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,13 +19,34 @@ const Form = ({ persons, setPersons }) => {
     let validateName = persons.find((person) => person.name === newName);
 
     if (validateName) {
-      return alert(`${validateName.name} is already added to phonebook`);
+      if (
+        window.confirm(
+          `${validateName.name} is already added to phonebook, replace the old number with a new one?`
+        )
+      ) {
+        const updatedPerson = {...validateName, number};
+        service.updateById(validateName.id, updatedPerson).then((person) => {
+          setPersons(
+            persons.map((p => p.id !== validateName.id ? p : person))
+          );
+          setNewName("");
+          setNumber("");
+        })
+      }
+      return;
     }
+
     const newPerson = {
       name: newName,
       number: number,
     };
-    setPersons([...persons, newPerson]);
+
+    service.create(newPerson).then((person) => {
+      setPersons([...persons, person]);
+      setNewName("");
+      setNumber("");
+    });
+
   };
 
   return (

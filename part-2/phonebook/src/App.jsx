@@ -2,23 +2,22 @@ import { useEffect, useState } from "react";
 import Person from "./components/Person";
 import Filter from "./components/Filter";
 import Form from "./components/Form";
-
-import axios from 'axios'
+import services from "./services/service";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [filterName, setFilterName] = useState("");
 
-
   useEffect(() => {
-    axios.get("http://localhost:3001/persons")
-      .then(response => {
-        console.log("fetched!");
-        setPersons(response.data)
-      })
-  },[])
+    services.getAll().then((response) => {
+      setPersons(response);
+    });
+  }, []);
 
-  const filteredPerson = persons.filter(person => person.name.toLowerCase().includes(filterName.toLowerCase()))
+  const filteredPerson = persons.filter((person) =>
+    person.name.toLowerCase().includes(filterName.toLowerCase())
+  );
+
 
 
   return (
@@ -27,11 +26,15 @@ const App = () => {
       <Filter filterName={filterName} setFilterName={setFilterName} />
       <h2>add a new</h2>
       <Form persons={persons} setPersons={setPersons} />
+
       <h2>Numbers</h2>
       <div>
         {filteredPerson.map((person) => (
-          <Person key={person.id} person={person} />
+
+          <Person key={person.id} person={person} persons={persons} setPersons={setPersons} />
+
         ))}
+
       </div>
     </div>
   );
