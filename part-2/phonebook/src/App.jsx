@@ -14,11 +14,11 @@ const App = () => {
     });
   }, []);
 
-  const filteredPerson = persons.filter((person) =>
-    person.name.toLowerCase().includes(filterName.toLowerCase())
+  const filteredPerson = persons.filter(
+    (person) =>
+      person.name &&
+      person.name.toLowerCase().includes(filterName.toLowerCase())
   );
-
-
 
   return (
     <div>
@@ -30,11 +30,13 @@ const App = () => {
       <h2>Numbers</h2>
       <div>
         {filteredPerson.map((person) => (
-
-          <Person key={person.id} person={person} persons={persons} setPersons={setPersons} />
-
+          <Person
+            key={person.id}
+            person={person}
+            persons={persons}
+            setPersons={setPersons}
+          />
         ))}
-
       </div>
     </div>
   );
