@@ -4,10 +4,13 @@ import mongoose from "mongoose";
 import supertest from "supertest";
 import app from "../app.js";
 import Blog from "../models/Blog.js";
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 dotenv.config();
 
 const api = supertest(app);
+let token;
 
 const initialBlogs = [
   {
@@ -26,10 +29,33 @@ const initialBlogs = [
 
 beforeEach(async () => {
   await Blog.deleteMany({});
-  await Blog.insertMany(initialBlogs);
+  await User.deleteMany({});
+
+  const passwordHash = await bcrypt.hash("password", 10);
+  const user = new User({ username: "user", passwordHash });
+  await user.save();
+
+  const loginRes = await api.post("/api/login").send({
+    username: "user",
+    password: "password",
+  });
+  token = loginRes.body.token;
+
+  const blogObjects = initialBlogs.map((b) => ({ ...b, user: user._id }));
+  await Blog.insertMany(blogObjects);
 });
 
 describe("GET request to /api/blogs to get blogs in JSON", () => {
+  test("adding a blog fails with 401 if token is not provided", async () => {
+    const newBlog = {
+      title: "New Blog",
+      author: "Blogger",
+      url: "www.blogger.com/blog",
+    };
+
+    await api.post("/api/blogs").send(newBlog).expect(401);
+  });
+
   test("blogs returned as JSON", async () => {
     await api
       .get("/api/blogs")
@@ -67,6 +93,7 @@ describe("POST request to /api/blogs", () => {
 
     await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -87,6 +114,7 @@ describe("POST request to /api/blogs", () => {
 
     const response = await api
       .post("/api/blogs")
+      .set("Authorization", `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect("Content-Type", /application\/json/);
@@ -100,7 +128,12 @@ describe("POST request to /api/blogs", () => {
       url: "www.blogger.com",
     };
 
-    await api.post("/api/blogs").send(newBlog).expect(400);
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+
+      .set({ Authorization: `Bearer ${token}` }) // Need token
+      .expect(400);
   });
 
   test("check if url property is missing", async () => {
@@ -109,7 +142,12 @@ describe("POST request to /api/blogs", () => {
       author: "Blogger",
     };
 
-    await api.post("/api/blogs").send(newBlog).expect(400);
+    await api
+      .post("/api/blogs")
+      .send(newBlog)
+
+      .set("Authorization", `Bearer ${token}`) // Need token
+      .expect(400);
   });
 });
 
@@ -118,7 +156,10 @@ describe("DELETE request to /api/blogs", () => {
     const blogsAtStart = await Blog.find({});
     const blogsToDelete = blogsAtStart[0];
 
-    await api.delete(`/api/blogs/${blogsToDelete.id}`).expect(204);
+    await api
+      .delete(`/api/blogs/${blogsToDelete.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(204);
 
     const blogsAtEnd = await Blog.find({});
     assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1);
@@ -142,6 +183,7 @@ describe("PUT request to /api/blogs", () => {
 
     const response = await api
       .put(`/api/blogs/${blogToUpdate.id}`)
+      .set("Authorization", `Bearer ${token}`)
       .send(updatedData)
       .expect(200)
       .expect("Content-Type", /application\/json/);

@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 import express from "express";
 import { MONGODB_URI } from "./utils/config.js";
 import blogsRouter from "./controllers/blogController.js";
+import userRouter from "./controllers/userController.js";
 import { info, error } from "./utils/logger.js";
+import loginRouter from "./controllers/loginController.js";
+import middleware from "./utils/middleware.js";
 const app = express();
 
 mongoose
@@ -16,27 +19,14 @@ mongoose
 
 app.use(express.json());
 
-app.use((req, res, next) => {
-  info("Method:", req.method);
-  info("Path:  ", req.path);
-  info("Body:  ", req.body);
-  info("---");
-  next();
-});
+app.use(middleware.reqLogger);
+app.use(middleware.tokenExtractor);
 
 app.use("/api", blogsRouter);
+app.use("/api", userRouter);
+app.use("/api", loginRouter);
 
-app.use((err, req, res, next) => {
-  error(err.message);
-
-  if (err.name === "CastError") {
-    return res.status(400).send({ error: "malformatted id" });
-  }
-  if (err.name === "ValidationError") {
-    return res.status(400).json({ error: err.message });
-  }
-
-  next(err);
-});
+app.use(middleware.unknownEndpoint);
+app.use(middleware.errorHandler);
 
 export default app;
