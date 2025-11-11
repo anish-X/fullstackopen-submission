@@ -88,7 +88,7 @@ blogsRouter.delete(
 
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
-      return response.status(404).json({ error: "blog not found" });
+      return res.status(404).json({ error: "blog not found" });
     }
 
     if (blog.user.toString() !== user._id.toString()) {
